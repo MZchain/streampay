@@ -40,12 +40,16 @@ interface streamPayOfFixedFlowrateInterface{
         address indexed sender,
         address indexed recipient,
         uint256 senderBalance,
-        uint256 recipientBalance
+        uint256 recipientBalance,
+        uint256 timestamp
     );
     
-    function fixedFlowrateBalanceOf(uint256 streamId,address who) external returns(uint256 balance);
+    function fixedFlowrateBalanceOf(uint256 streamId,address who) external view returns (uint256 balance);
 
-    function getFixedFlowrateStream(uint256 streamId) external view returns(            
+    function getFixedFlowrateStream(uint256 streamId)
+        external
+        view
+        returns(
             address sender,
             address recipient,
             uint256 maxAmount,
@@ -56,7 +60,8 @@ interface streamPayOfFixedFlowrateInterface{
             uint256 withdrawalAmount);
 
     function createFixedFlowrateStream(address recipient,uint256 maxAmount,address tokenAddress,uint256 ratePerSecond,uint256 startTime) 
-    external returns(uint256);
+        external
+        returns(uint256 streamId);
     
     function transferWithFixedFlowrate(uint256 streamId,uint256 amount) external returns(bool);
     

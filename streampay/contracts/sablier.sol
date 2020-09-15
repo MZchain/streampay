@@ -322,8 +322,6 @@ contract Sablier is IERC1620,OwnableWithoutRenounce, PausableWithoutRenounce, Ex
          */
         assert(vars.mathErr == MathError.NO_ERROR);
 
-        if (streams[streamId].remainingBalance == 0) delete streams[streamId];
-
         require(IERC20(stream.tokenAddress).transfer(stream.recipient, amount), "token transfer failure");
         emit WithdrawFromStream(streamId, stream.recipient, amount);
     }
@@ -346,7 +344,7 @@ contract Sablier is IERC1620,OwnableWithoutRenounce, PausableWithoutRenounce, Ex
             require(token.transfer(stream.recipient, recipientBalance), "recipient token transfer failure");
         if (senderBalance > 0) require(token.transfer(stream.sender, senderBalance), "sender token transfer failure");
 
-        emit CancelStream(streamId, stream.sender, stream.recipient, senderBalance, recipientBalance);
+        emit CancelStream(streamId, stream.sender, stream.recipient, senderBalance, recipientBalance,block.timestamp);
     }
 
 }

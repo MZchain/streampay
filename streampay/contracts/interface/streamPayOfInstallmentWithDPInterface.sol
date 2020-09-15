@@ -14,7 +14,9 @@ interface streamPayOfInstallmentWithDPInterface{
      */
     event TransferWithDP(
         uint256 indexed streamId,
-        uint256 transferAmount
+        uint256 transferAmount,
+        uint256 haveBeenPaidAmount,
+        uint256 haveBeenNumberOfInstallment
     );
     
     /**
@@ -31,7 +33,9 @@ interface streamPayOfInstallmentWithDPInterface{
         uint256 stopTime,
         uint256 numberOfInstallments,
         uint256 downPaymentRatio,
-        uint256 feesOfRecipientPer
+        uint256 feesOfRecipientPer,
+        uint256 haveBeenPaidAmount,
+        uint256 installmentAmountWithFees
     );
     
         /**
@@ -54,13 +58,14 @@ interface streamPayOfInstallmentWithDPInterface{
         address indexed recipient,
         uint256 senderBalance,
         uint256 recipientBalance,
-        uint256 feesOfProtocol
+        uint256 feesOfProtocol,
+        uint256 timestamp
     );
     
     function createInstallmentWithDPStream(address recipient,uint256 deposit,address tokenAddress,uint256 startTime,
     uint256 stopTime,uint256 numberOfInstallments,uint256 downPaymentRatio,uint256 feesOfRecipientPer) external returns(uint256);
     
-    function installmentWithDPBalanceOf(uint256 streamId, address who) external returns (uint256 balance);
+    function installmentWithDPBalanceOf(uint256 streamId, address who) external view returns (uint256 balance);
     
     function withdrawInstallmentWithDPStream(uint256 streamId,uint256 amount) external returns(bool);
     
@@ -72,14 +77,14 @@ interface streamPayOfInstallmentWithDPInterface{
         address sender,
         address recipient,
         uint256 deposit,
-        uint256 downPaymentRatio,
+        uint256 downPaymentAmount,
         address tokenAddress,
         uint256 startTime,
         uint256 stopTime,
         uint256 numberOfInstallments,
         uint256 feesOfRecipientPer,
-        uint256 ratePerSecond,
         uint256 haveBeenNumberOfInstallment,
+        uint256 haveBeenPaidAmount,
         uint256 withdrawalAmount);
 }
 

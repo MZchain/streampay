@@ -2,9 +2,11 @@ pragma solidity 0.5.16;
 
 import "../node_modules/@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 import "../node_modules/@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard.sol";
+
 import "./tools-contracts/OwnableWithoutRenounce.sol";
 import "./tools-contracts/PausableWithoutRenounce.sol";
 import "./tools-contracts/CarefulMath.sol";
+
 import "./interface/streamPayOfFixedFlowrateInterface.sol";
 import './Types.sol';
 
@@ -73,7 +75,7 @@ contract streamPayOfFixedFlowrate is OwnableWithoutRenounce, PausableWithoutReno
         external
         view
         streamExists(streamId)
-        returns(
+        returns (
             address sender,
             address recipient,
             uint256 maxAmount,
@@ -204,6 +206,7 @@ contract streamPayOfFixedFlowrate is OwnableWithoutRenounce, PausableWithoutReno
      */
     function fixedFlowrateBalanceOf(uint256 streamId,address who)
         public
+        view
         streamExists(streamId)
         returns(uint256 balance)
     {
@@ -324,9 +327,7 @@ contract streamPayOfFixedFlowrate is OwnableWithoutRenounce, PausableWithoutReno
         
         (vars.mathErr,fixedFlowrateStreams[streamId].withdrawalAmount) = addUInt(fixedFlowrateStream.withdrawalAmount,amount);
         assert(vars.mathErr == MathError.NO_ERROR);
-        
-        if (fixedFlowrateStreams[streamId].withdrawalAmount == fixedFlowrateStream.maxAmount) delete fixedFlowrateStreams[streamId];
-        
+
         require(IERC20(fixedFlowrateStream.tokenAddress).transfer(fixedFlowrateStream.recipient, amount), "token transfer failure");
         emit WithdrawFromFixedFlowrateStream(streamId,fixedFlowrateStream.recipient,amount);
     }
@@ -366,6 +367,6 @@ contract streamPayOfFixedFlowrate is OwnableWithoutRenounce, PausableWithoutReno
         if (recipientBalance > 0)
             require(token.transfer(fixedFlowrateStream.recipient, recipientBalance), "recipient token transfer failure");
         if (senderBalance > 0) require(token.transfer(fixedFlowrateStream.sender,senderBalance));
-        emit CancelFixedFlowrateStream(streamId, fixedFlowrateStream.sender, fixedFlowrateStream.recipient,senderBalance,recipientBalance);
+        emit CancelFixedFlowrateStream(streamId, fixedFlowrateStream.sender, fixedFlowrateStream.recipient,senderBalance,recipientBalance,block.timestamp);
     }
 }

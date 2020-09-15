@@ -246,28 +246,40 @@ contract streamPayOfInstallmentWithDP is OwnableWithoutRenounce, PausableWithout
         address sender,
         address recipient,
         uint256 deposit,
-        uint256 downPaymentRatio,
+        uint256 downPaymentAmount,
         address tokenAddress,
         uint256 startTime,
         uint256 stopTime,
         uint256 numberOfInstallments,
         uint256 feesOfRecipientPer,
-        uint256 ratePerSecond,
         uint256 haveBeenNumberOfInstallment,
+        uint256 haveBeenPaidAmount,
         uint256 withdrawalAmount)
     {
         sender = installmentWithDPStreams[streamId].sender;
         recipient = installmentWithDPStreams[streamId].recipient;
         deposit = installmentWithDPStreams[streamId].deposit;
-        downPaymentRatio = installmentWithDPStreams[streamId].downPaymentRatio;
+        downPaymentAmount = installmentWithDPStreams[streamId].downPaymentAmount;
         tokenAddress = installmentWithDPStreams[streamId].tokenAddress;
         startTime = installmentWithDPStreams[streamId].startTime;
         stopTime = installmentWithDPStreams[streamId].stopTime;
         numberOfInstallments = installmentWithDPStreams[streamId].numberOfInstallments;
         feesOfRecipientPer = installmentWithDPStreams[streamId].feesOfRecipientPer;  
-        ratePerSecond = installmentWithDPStreams[streamId].ratePerSecond;  
         haveBeenNumberOfInstallment = installmentWithDPStreams[streamId].haveBeenNumberOfInstallment;
+        haveBeenPaidAmount = installmentWithDPStreams[streamId].haveBeenPaidAmount;
         withdrawalAmount = installmentWithDPStreams[streamId].withdrawalAmount;
+    }
+
+    function getInstallmentWithDPStreamCal(uint256 streamId) external view streamExists(streamId) returns(
+        uint256 installmentAmountWithFees,
+        uint256 oneOfInstallmentAmount,
+        uint256 oneOfInstallmentTime,
+        uint256 ratePerSecond)
+    {
+        installmentAmountWithFees = installmentWithDPStreams[streamId].installmentAmountWithFees;
+        oneOfInstallmentAmount = installmentWithDPStreams[streamId].oneOfInstallmentAmount;
+        oneOfInstallmentTime = installmentWithDPStreams[streamId].oneOfInstallmentTime;
+        ratePerSecond = installmentWithDPStreams[streamId].ratePerSecond;
     }
     
     struct CreateInstallmentWithDPStreamLocalVars {
@@ -386,7 +398,8 @@ contract streamPayOfInstallmentWithDP is OwnableWithoutRenounce, PausableWithout
         assert(vars.mathErr == MathError.NO_ERROR);
 
         require(IERC20(tokenAddress).transferFrom(msg.sender, address(this), vars.firstPayAmount), "token transfer failure");
-        emit CreateInstallmentWithDPStream(streamId,msg.sender,recipient,deposit,tokenAddress,startTime,stopTime,numberOfInstallments,downPaymentRatio,feesOfRecipientPer);
+        emit CreateInstallmentWithDPStream(streamId,msg.sender,recipient,deposit,tokenAddress,startTime,stopTime,numberOfInstallments,
+        downPaymentRatio,feesOfRecipientPer,vars.haveBeenPaidAmount,installmentAmountWithFees);
 
         return streamId;
     } 
@@ -427,6 +440,7 @@ contract streamPayOfInstallmentWithDP is OwnableWithoutRenounce, PausableWithout
      */
     function installmentWithDPBalanceOf(uint256 streamId, address who)
         public
+        view
         streamExists(streamId)
         returns (uint256 balance)
     {
@@ -446,6 +460,10 @@ contract streamPayOfInstallmentWithDP is OwnableWithoutRenounce, PausableWithout
         if (delta >= installmentWithDPStream.oneOfInstallmentTime){
             (vars.mathErr, vars.numberOfTime) = divUInt(delta,installmentWithDPStream.oneOfInstallmentTime);
             assert(vars.mathErr == MathError.NO_ERROR);
+
+            if(vars.numberOfTime > installmentWithDPStream.haveBeenNumberOfInstallment){
+                vars.numberOfTime = installmentWithDPStream.haveBeenNumberOfInstallment;
+            }
 
             (vars.mathErr,vars.remainderOfOneInstallment) = modUInt(installmentWithDPStream.oneOfInstallmentAmount,installmentWithDPStream.oneOfInstallmentTime);
             assert(vars.mathErr == MathError.NO_ERROR);
@@ -537,7 +555,7 @@ contract streamPayOfInstallmentWithDP is OwnableWithoutRenounce, PausableWithout
         assert(vars.mathErr == MathError.NO_ERROR);
         
         require(IERC20(installmentWithDPStream.tokenAddress).transferFrom(msg.sender, address(this), vars.transferAmount), "token transfer failure");
-        emit TransferWithDP(streamId,vars.transferAmount);
+        emit TransferWithDP(streamId,vars.transferAmount,installmentWithDPStreams[streamId].haveBeenPaidAmount,installmentWithDPStreams[streamId].haveBeenNumberOfInstallment);
 
         return true;
     }
@@ -599,11 +617,6 @@ contract streamPayOfInstallmentWithDP is OwnableWithoutRenounce, PausableWithout
         (vars.mathErr, vars.actualAmount) = subUInt(amount, feesOfProtocol);
         assert(vars.mathErr == MathError.NO_ERROR);
 
-        (vars.mathErr,vars.depositWithFees) = addUInt(installmentWithDPStream.installmentAmountWithFees,installmentWithDPStream.downPaymentAmount);
-        assert(vars.mathErr == MathError.NO_ERROR);
-        
-        if (installmentWithDPStreams[streamId].withdrawalAmount == vars.depositWithFees) delete installmentWithDPStreams[streamId];
-        
         require(IERC20(installmentWithDPStream.tokenAddress).transfer(installmentWithDPStream.recipient, vars.actualAmount), "token transfer failure");
         emit WithdrawFromInstallmentWithDPStream(streamId,installmentWithDPStream.recipient,amount,vars.actualAmount,feesOfProtocol);
     }    
@@ -657,6 +670,6 @@ contract streamPayOfInstallmentWithDP is OwnableWithoutRenounce, PausableWithout
             require(token.transfer(installmentWithDPStream.recipient, vars.actualRecipientBalance), "recipient token transfer failure");
         if (senderBalance > 0) require(token.transfer(installmentWithDPStream.sender,senderBalance));
         
-        emit CancelInstallmentWithDPStream(streamId,installmentWithDPStream.sender,installmentWithDPStream.recipient,senderBalance,recipientBalance,feesOfProtocol);
+        emit CancelInstallmentWithDPStream(streamId,installmentWithDPStream.sender,installmentWithDPStream.recipient,senderBalance,recipientBalance,feesOfProtocol,block.timestamp);
     }
 }

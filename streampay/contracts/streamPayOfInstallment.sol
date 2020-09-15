@@ -208,8 +208,8 @@ contract streamPayOfInstallment is OwnableWithoutRenounce, PausableWithoutRenoun
         uint256 stopTime,
         uint256 numberOfInstallments,
         uint256 feesOfRecipientPer,
-        uint256 ratePerSecond,
         uint256 haveBeenNumberOfInstallment,
+        uint256 haveBeenPaidAmount,
         uint256 withdrawalAmount)
     {
         sender = installmentStreams[streamId].sender;
@@ -220,10 +220,22 @@ contract streamPayOfInstallment is OwnableWithoutRenounce, PausableWithoutRenoun
         stopTime = installmentStreams[streamId].stopTime;
         numberOfInstallments = installmentStreams[streamId].numberOfInstallments;
         feesOfRecipientPer = installmentStreams[streamId].feesOfRecipientPer;  
-        ratePerSecond = installmentStreams[streamId].ratePerSecond;
         haveBeenNumberOfInstallment = installmentStreams[streamId].haveBeenNumberOfInstallment;
+        haveBeenPaidAmount = installmentStreams[streamId].haveBeenPaidAmount;
         withdrawalAmount = installmentStreams[streamId].withdrawalAmount;
-    }    
+    }
+
+    function getInstallmentStreamCal(uint256 streamId) external view streamExists(streamId) returns(
+        uint256 installmentAmountWithFees,
+        uint256 oneOfInstallmentAmount,
+        uint256 oneOfInstallmentTime,
+        uint256 ratePerSecond)
+    {
+        installmentAmountWithFees = installmentStreams[streamId].installmentAmountWithFees;
+        oneOfInstallmentAmount = installmentStreams[streamId].oneOfInstallmentAmount;
+        oneOfInstallmentTime = installmentStreams[streamId].oneOfInstallmentTime;
+        ratePerSecond = installmentStreams[streamId].ratePerSecond;
+    }
     
     struct CreateInstallmentStreamLocalVars {
         MathError mathErr;
@@ -333,7 +345,8 @@ contract streamPayOfInstallment is OwnableWithoutRenounce, PausableWithoutRenoun
 
         require(IERC20(tokenAddress).transferFrom(msg.sender, address(this), vars.oneOfInstallmentAmount), "token transfer failure");
         
-        emit CreateInstallmentStream(streamId,msg.sender,recipient,deposit,tokenAddress,startTime,stopTime,numberOfInstallments,feesOfRecipientPer);
+        emit CreateInstallmentStream(streamId,msg.sender,recipient,deposit,tokenAddress,startTime,stopTime,numberOfInstallments,
+        feesOfRecipientPer,vars.haveBeenPaidAmount,installmentAmountWithFees);
         return streamId;
     } 
 
@@ -378,6 +391,7 @@ contract streamPayOfInstallment is OwnableWithoutRenounce, PausableWithoutRenoun
      */
     function installmentBalanceOf(uint256 streamId, address who)
         public
+        view
         streamExists(streamId)
         returns (uint256 balance)
     {
@@ -392,6 +406,10 @@ contract streamPayOfInstallment is OwnableWithoutRenounce, PausableWithoutRenoun
         if (delta >= installmentStream.oneOfInstallmentTime){
             (vars.mathErr, vars.numberOfTime) = divUInt(delta,installmentStream.oneOfInstallmentTime);
             assert(vars.mathErr == MathError.NO_ERROR);
+
+            if(vars.numberOfTime > installmentStream.haveBeenNumberOfInstallment){
+                vars.numberOfTime = installmentStream.haveBeenNumberOfInstallment;
+            }
 
             (vars.mathErr,vars.remainderOfOneInstallment) = modUInt(installmentStream.oneOfInstallmentAmount,installmentStream.oneOfInstallmentTime);
             assert(vars.mathErr == MathError.NO_ERROR);
@@ -482,7 +500,7 @@ contract streamPayOfInstallment is OwnableWithoutRenounce, PausableWithoutRenoun
         assert(vars.mathErr == MathError.NO_ERROR);
         
         require(IERC20(installmentStream.tokenAddress).transferFrom(msg.sender, address(this), vars.transferAmount), "token transfer failure");
-        emit TransferWithInstallment(streamId,vars.transferAmount);
+        emit TransferWithInstallment(streamId,vars.transferAmount,installmentStreams[streamId].haveBeenPaidAmount,installmentStreams[streamId].haveBeenNumberOfInstallment);
 
         return true;
     }
@@ -533,9 +551,7 @@ contract streamPayOfInstallment is OwnableWithoutRenounce, PausableWithoutRenoun
 
         (vars.mathErr,installmentStreams[streamId].withdrawalAmount) = addUInt(installmentStream.withdrawalAmount,amount);
         assert(vars.mathErr == MathError.NO_ERROR);
-        
-        if (installmentStreams[streamId].withdrawalAmount == installmentStream.installmentAmountWithFees) delete installmentStreams[streamId];
-        
+
         uint256 feesOfProtocol = calculationFeesOfProtocol(amount);
         
         (vars.mathErr, earnings[installmentStream.tokenAddress]) = addUInt(earnings[installmentStream.tokenAddress], feesOfProtocol);
@@ -598,6 +614,6 @@ contract streamPayOfInstallment is OwnableWithoutRenounce, PausableWithoutRenoun
             require(token.transfer(installmentStream.recipient, vars.actualRecipientBalance), "recipient token transfer failure");
         if (senderBalance > 0) require(token.transfer(installmentStream.sender,senderBalance));
         
-        emit CancelInstallmentStream(streamId,installmentStream.sender,installmentStream.recipient,senderBalance,recipientBalance,feesOfProtocol);
+        emit CancelInstallmentStream(streamId,installmentStream.sender,installmentStream.recipient,senderBalance,recipientBalance,feesOfProtocol,block.timestamp);
     }
 }

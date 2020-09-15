@@ -21,7 +21,9 @@ interface streamPayOfInstallmentInterface{
         uint256 startTime,
         uint256 stopTime,
         uint256 numberOfInstallments,
-        uint256 feesOfRecipientPer
+        uint256 feesOfRecipientPer,
+        uint256 haveBeenPaidAmount,
+        uint256 installmentAmountWithFees
     );
     
     /**
@@ -29,7 +31,9 @@ interface streamPayOfInstallmentInterface{
      */
     event TransferWithInstallment(
         uint256 indexed streamId,
-        uint256 transferAmount
+        uint256 transferAmount,
+        uint256 haveBeenPaidAmount,
+        uint256 haveBeenNumberOfInstallment
     );
     
     /**
@@ -52,10 +56,11 @@ interface streamPayOfInstallmentInterface{
         address indexed recipient,
         uint256 senderBalance,
         uint256 recipientBalance,
-        uint256 feesOfProtocol
+        uint256 feesOfProtocol,
+        uint256 timestamp
     );
     
-    function installmentBalanceOf(uint256 streamId, address who) external returns (uint256 balance);
+    function installmentBalanceOf(uint256 streamId, address who) external view returns (uint256 balance);
 
     function getInstallmentStream(uint256 streamId) external view returns(
         address sender,
@@ -66,8 +71,8 @@ interface streamPayOfInstallmentInterface{
         uint256 stopTime,
         uint256 numberOfInstallments,
         uint256 feesOfRecipientPer,
-        uint256 ratePerSecond,
         uint256 haveBeenNumberOfInstallment,
+        uint256 haveBeenPaidAmount,
         uint256 withdrawalAmount);
 
     function createInstallmentStream(address recipient,uint256 deposit,address tokenAddress,uint256 startTime,uint256 stopTime,uint256 numberOfInstallments,uint256 feesOfRecipientPer) external returns(uint256);

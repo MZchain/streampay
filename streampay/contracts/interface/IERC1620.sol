@@ -32,7 +32,8 @@ interface IERC1620 {
         address indexed sender,
         address indexed recipient,
         uint256 senderBalance,
-        uint256 recipientBalance
+        uint256 recipientBalance,
+        uint256 timestamp
     );
 
     function balanceOf(uint256 streamId, address who) external view returns (uint256 balance);
