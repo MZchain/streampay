@@ -66,4 +66,4 @@ Get <a href="https://github.com/Machael-lcg/streampay/tree/master/streampay/abi"
 
 # Code
 
-The code hasn't been audited yet, but you can always verify it
+The code hasn't been audited yet, but you can always verify it.
