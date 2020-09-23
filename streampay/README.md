@@ -5,7 +5,7 @@ it includes Fixed Deposit Stream, Fixed Flowrate Stream, Installment Stream and 
 
 # Official Site
 
-https://streampay.finane
+https://streampay.finance
 
 # ABI and Address
 
